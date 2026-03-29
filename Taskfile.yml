@@ -1,0 +1,89 @@
+version: '3'
+
+tasks:
+  stat:
+    desc: Run stat service
+    dir: ./stat
+    env:
+      STAT_PORT: '{{default "8002" .STAT_PORT}}'
+      SQLITE_PATH: '{{default "../data/listenai.db" .SQLITE_PATH}}'
+    cmds:
+    - go run .
+
+  nlp:
+    desc: Run NLP service
+    dir: ./nlp
+    env:
+      NLP_PORT: '{{default "8001" .NLP_PORT}}'
+    cmds:
+    - |
+      PY_BIN="$(command -v python3.13 || command -v python3)"
+      if [ ! -x .venv/bin/python ]; then
+        "$PY_BIN" -m venv .venv
+        .venv/bin/python -m ensurepip --upgrade
+        .venv/bin/python -m pip install -U pip
+        .venv/bin/python -m pip install -r requirements.txt
+      fi
+      if ! .venv/bin/python -c "import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 13) else 1)" >/dev/null 2>&1; then
+        rm -rf .venv
+        "$PY_BIN" -m venv .venv
+        .venv/bin/python -m ensurepip --upgrade
+        .venv/bin/python -m pip install -U pip
+        .venv/bin/python -m pip install -r requirements.txt
+      fi
+      if ! .venv/bin/python -m pip --version >/dev/null 2>&1; then
+        .venv/bin/python -m ensurepip --upgrade
+        .venv/bin/python -m pip install -U pip
+      fi
+      if ! .venv/bin/python -c "import uvicorn" >/dev/null 2>&1; then
+        .venv/bin/python -m pip install -r requirements.txt
+      fi
+      .venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port "$NLP_PORT"
+
+  gateway:
+    desc: Run gateway service
+    dir: ./gateway
+    cmds:
+    - |
+      if [ ! -d node_modules ]; then
+        npm install
+      fi
+    - npm run dev
+
+  frontend:
+    desc: Run frontend service
+    dir: ./frontend
+    env:
+      GATEWAY_URL: '{{default "http://localhost:8000" .GATEWAY_URL}}'
+    cmds:
+    - |
+      PY_BIN="$(command -v python3.13 || command -v python3)"
+      if [ ! -x .venv/bin/python ]; then
+        "$PY_BIN" -m venv .venv
+        .venv/bin/python -m ensurepip --upgrade
+        .venv/bin/python -m pip install -U pip
+        .venv/bin/python -m pip install -r requirements.txt
+      fi
+      if ! .venv/bin/python -c "import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 13) else 1)" >/dev/null 2>&1; then
+        rm -rf .venv
+        "$PY_BIN" -m venv .venv
+        .venv/bin/python -m ensurepip --upgrade
+        .venv/bin/python -m pip install -U pip
+        .venv/bin/python -m pip install -r requirements.txt
+      fi
+      if ! .venv/bin/python -m pip --version >/dev/null 2>&1; then
+        .venv/bin/python -m ensurepip --upgrade
+        .venv/bin/python -m pip install -U pip
+      fi
+      if ! .venv/bin/python -c "import streamlit" >/dev/null 2>&1; then
+        .venv/bin/python -m pip install -r requirements.txt
+      fi
+      .venv/bin/python -m streamlit run app.py --server.port 8501
+
+  up:
+    desc: Run all services together
+    deps:
+    - stat
+    - nlp
+    - gateway
+    - frontend
