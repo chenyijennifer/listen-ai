@@ -1,6 +1,6 @@
 # NLP Service
 
-This module performs simple lexicon-based sentiment analysis for English and Traditional Chinese text.
+Default inference uses **TF--IDF + LogisticRegression** when `model_artifacts/` is present; otherwise it falls back to the lexicon baseline. Override with `NLP_SENTIMENT_BACKEND=lexicon` or `sklearn`, and `NLP_MODEL_DIR` if artifacts live outside the default path.
 
 ## Prerequisites
 
@@ -53,8 +53,16 @@ curl -X POST http://localhost:8001/sentiment \
   -d '{"texts":["great update","bad experience","這次更新很好","體驗很糟"]}'
 ```
 
+## Train and evaluate (optional)
+
+```bash
+python training/train_sentiment.py --data data/labeled_seed.jsonl
+python eval/eval_sentiment.py --data data/labeled_seed.jsonl
+python benchmark/latency.py --texts-file data/labeled_seed.jsonl --batch 32
+```
+
 ## Run Unit Tests
 
 ```bash
-python -m unittest -v
+python -m unittest discover -s tests -v
 ```

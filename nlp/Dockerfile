@@ -5,7 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py .
+COPY app.py lexicon.py ml_backend.py sentiment_service.py ./
+COPY model_artifacts ./model_artifacts/
 
 ENV NLP_PORT=8001
 EXPOSE 8001

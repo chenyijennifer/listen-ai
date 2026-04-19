@@ -1,4 +1,10 @@
-.venv
 __pycache__
-*.pyc
-.DS_Store
+*.py[cod]
+.venv
+.env
+tests
+*.md
+training
+eval
+benchmark
+data/raw_posts.jsonl
