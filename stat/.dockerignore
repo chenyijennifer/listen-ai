@@ -1,0 +1,5 @@
+*.db
+bin/
+stat
+stat-service
+.DS_Store

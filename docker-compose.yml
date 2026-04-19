@@ -1,0 +1,47 @@
+# 若宿主機埠已被佔用，可覆寫「對外」映射（容器內埠不變）：
+#   GATEWAY_HOST_PORT=18000 FRONTEND_HOST_PORT=18501 docker compose up
+services:
+  stat:
+    build:
+      context: ./stat
+      dockerfile: Dockerfile
+    environment:
+      STAT_PORT: "8002"
+      SQLITE_PATH: /data/listenai.db
+    volumes:
+      - ./data:/data
+
+  nlp:
+    build:
+      context: ./nlp
+      dockerfile: Dockerfile
+    environment:
+      NLP_PORT: "8001"
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    environment:
+      GATEWAY_PORT: "8000"
+      STAT_URL: http://stat:8002
+      NLP_URL: http://nlp:8001
+      JWT_SECRET: supersecret
+      DEMO_USER: admin
+      DEMO_PASS: admin123
+    depends_on:
+      - stat
+      - nlp
+    ports:
+      - "${GATEWAY_HOST_PORT:-8000}:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      GATEWAY_URL: http://gateway:8000
+    depends_on:
+      - gateway
+    ports:
+      - "${FRONTEND_HOST_PORT:-8501}:8501"
